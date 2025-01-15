@@ -18,16 +18,40 @@ const Chat = () => {
   ]);
   const [input, setInput] = useState("");
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (input.trim() === "") return;
+  
 
-    setChatHistory((prevChat) => [
-      ...prevChat,
-      { sender: "User", message: input }, 
-      { sender: "Bot", message: "This is a default reply from bot" }, 
-    ]);
-
-    setInput(""); 
+    setChatHistory((prevChat) => [...prevChat, { sender: "User", message: input }]);
+  
+    try {
+      const response = await fetch("http://127.0.0.1:5000/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: input }),
+      });
+    
+      if (!response.ok) {
+        throw new Error(`Error: ${response.statusText}`);
+      }
+    
+      const data = await response.json();
+      setChatHistory((prevChat) => [
+        ...prevChat,
+        { sender: "Bot", message: data.message },
+      ]);
+    } catch (error) {
+      console.error("Error:", error);
+      setChatHistory((prevChat) => [
+        ...prevChat,
+        { sender: "Bot", message: "Something went wrong. Please try again later." },
+      ]);
+    }
+     finally {
+      setInput(""); 
+    }
   };
 
   const handleEnter = (e: React.KeyboardEvent) => {
